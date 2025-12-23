@@ -1,0 +1,121 @@
+service: iot-lectura-sensor
+
+provider:
+  name: aws
+  runtime: python3.13
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  iam:
+    role: arn:aws:iam::${aws:accountId}:role/LabRole
+
+custom:
+  notificationEmail: dfigueroaw@gmail.com
+
+functions:
+  GenerarEventoSensorIoT:
+    handler: GenerarEventoSensorIoT.lambda_handler
+
+  InsertarEventoSensorIoT:
+    handler: InsertarEventoSensorIoT.lambda_handler
+    events:
+      - sqs:
+          arn: !GetAtt ColaSensorIoTFAB1.Arn
+          batchSize: 1
+
+resources:
+  Resources:
+    TemaSensorIoT:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: TemaSensorIoT
+
+    SuscripcionEmailSensorIoT:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn: !Ref TemaSensorIoT
+        Protocol: email
+        Endpoint: ${self:custom.notificationEmail}
+        FilterPolicy:
+          tenant_id:
+            - FAB1
+          sensor_id:
+            - CO2
+          medicion:
+            - numeric:
+                - ">"
+                - 800
+
+    ReglaSimuladorSensorIoT:
+      Type: AWS::Events::Rule
+      Properties:
+        Name: SimuladorSensorIoT
+        ScheduleExpression: rate(1 minute)
+        State: ENABLED
+        Targets:
+          - Arn: !GetAtt GenerarEventoSensorIoTLambdaFunction.Arn
+            Id: GenerarEventoSensorIoTTarget
+
+    PermisoEventBridgeInvokeLambda:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName: !Ref GenerarEventoSensorIoTLambdaFunction
+        Action: lambda:InvokeFunction
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt ReglaSimuladorSensorIoT.Arn
+
+    TablaSensorIoTFAB1:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: t_sensor_iot_FAB1
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: lectura_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: lectura_id
+            KeyType: RANGE
+
+    ColaSensorIoTFAB1:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ColaSensorIoTFAB1
+
+    ColaSensorIoTFAB1Policy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref ColaSensorIoTFAB1
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: sns.amazonaws.com
+              Action: sqs:SendMessage
+              Resource: !GetAtt ColaSensorIoTFAB1.Arn
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !Ref TemaSensorIoT
+
+    SuscripcionSQSSensorIoTFAB1:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn: !Ref TemaSensorIoT
+        Protocol: sqs
+        Endpoint: !GetAtt ColaSensorIoTFAB1.Arn
+        FilterPolicy:
+          tenant_id:
+            - FAB1
+
+  Outputs:
+    TemaSensorIoTArn:
+      Value: !Ref TemaSensorIoT
+
+    ColaSensorIoTFAB1Url:
+      Value: !Ref ColaSensorIoTFAB1
+
+    TablaSensorIoTFAB1:
+      Value: t_sensor_iot_FAB1

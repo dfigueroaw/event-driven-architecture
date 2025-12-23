@@ -1,0 +1,61 @@
+service: iot-lectura-sensor
+
+provider:
+  name: aws
+  runtime: python3.13
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  iam:
+    role: arn:aws:iam::${aws:accountId}:role/LabRole
+
+custom:
+  notificationEmail: dfigueroaw@gmail.com
+
+functions:
+  GenerarEventoSensorIoT:
+    handler: GenerarEventoSensorIoT.lambda_handler
+
+resources:
+  Resources:
+    TemaSensorIoT:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: TemaSensorIoT
+
+    SuscripcionEmailSensorIoT:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn: !Ref TemaSensorIoT
+        Protocol: email
+        Endpoint: ${self:custom.notificationEmail}
+        FilterPolicy:
+          tenant_id:
+            - FAB1
+          sensor_id:
+            - CO2
+          medicion:
+            - numeric:
+                - ">"
+                - 800
+
+    ReglaSimuladorSensorIoT:
+      Type: AWS::Events::Rule
+      Properties:
+        Name: SimuladorSensorIoT
+        ScheduleExpression: rate(1 minute)
+        State: ENABLED
+        Targets:
+          - Arn: !GetAtt GenerarEventoSensorIoTLambdaFunction.Arn
+            Id: GenerarEventoSensorIoTTarget
+
+    PermisoEventBridgeInvokeLambda:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName: !Ref GenerarEventoSensorIoTLambdaFunction
+        Action: lambda:InvokeFunction
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt ReglaSimuladorSensorIoT.Arn
+
+  Outputs:
+    TemaSensorIoTArn:
+      Value: !Ref TemaSensorIoT
