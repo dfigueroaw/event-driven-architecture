@@ -1,0 +1,58 @@
+service: despacho-pedidos
+
+provider:
+  name: aws
+  runtime: python3.13
+  timeout: 30
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  iam:
+    role: arn:aws:iam::${aws:accountId}:role/LabRole
+
+functions:
+  RegistrarPedido:
+    handler: RegistrarPedido.lambda_handler
+    events:
+      - http:
+          path: pedidos/registrar
+          method: post
+          cors: true
+          integration: lambda
+
+  ProcesarPedido:
+    handler: ProcesarPedido.lambda_handler
+    events:
+      - http:
+          path: pedidos/procesar
+          method: get
+          cors: true
+          integration: lambda
+
+resources:
+  Resources:
+    ColaPedidos:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: sqs-pedidos
+
+    TablaPedidosProcesados:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: t_pedidos_procesados
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: pedido_id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: pedido_id
+            KeyType: RANGE
+
+  Outputs:
+    QueueUrl:
+      Value: !Ref ColaPedidos
+    TablaDynamo:
+      Value: t_pedidos_procesados

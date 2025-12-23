@@ -1,0 +1,28 @@
+{
+  "tenant_id": "PLAZA_VEA",
+  "pedido_id": 2,
+  "pedido_datos": {	
+    "cliente_id": "gcolchado@gmail.com",
+    "fecha_compra": "2024-06-01T15:30:00Z",
+    "items": [
+      {
+        "item_id": "001",
+        "product_name": "Jamonada",
+        "quantity": 1,
+        "price": "10.35"
+      },
+      {
+        "item_id": "002",
+        "product_name": "Pan Bimbo",
+        "quantity": 2,
+        "price": "25.50"
+      }
+    ],
+    "direccion_entrega": {
+      "calle": "Avenida Pardo 1066",
+      "distrito": "Miraflores",
+      "provincia": "Lima",  	
+      "pais": "Perú"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "tenant_id": "PLAZA_VEA",
+  "pedido_id": 5,
+  "pedido_datos": {	
+    "cliente_id": "crojo@gmail.com",
+    "fecha_compra": "2024-06-01T18:35:15Z",
+    "items": [
+      {
+        "item_id": "001",
+        "product_name": "Vino",
+        "quantity": 5,
+        "price": "120.99"
+      },
+      {
+        "item_id": "002",
+        "product_name": "Papas Fritas",
+        "quantity": 4,
+        "price": "50.00"
+      }
+    ],
+    "direccion_entrega": {
+      "calle": "Cavenecia 355",
+      "distrito": "San Isidro",
+      "provincia": "Lima",  	
+      "pais": "Perú"
+    }
+  }
+}

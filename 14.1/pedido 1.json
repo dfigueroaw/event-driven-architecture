@@ -1,0 +1,28 @@
+{
+  "tenant_id": "PLAZA_VEA",
+  "pedido_id": 1,
+  "pedido_datos": {	
+    "cliente_id": "jperez@gmail.com",
+    "fecha_compra": "2024-06-01T14:30:00Z",
+    "items": [
+      {
+        "item_id": "001",
+        "product_name": "Detergente",
+        "quantity": 2,
+        "price": "60.99"
+      },
+      {
+        "item_id": "002",
+        "product_name": "Lavavajilla",
+        "quantity": 1,
+        "price": "10.35"
+      }
+    ],
+    "direccion_entrega": {
+      "calle": "Avenida Los Frutales 123",
+      "distrito": "La Molina",
+      "provincia": "Lima",  	
+      "pais": "Perú"
+    }
+  }
+}

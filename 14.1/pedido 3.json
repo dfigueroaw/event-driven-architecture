@@ -1,0 +1,28 @@
+{
+  "tenant_id": "PLAZA_VEA",
+  "pedido_id": 3,
+  "pedido_datos": {	
+    "cliente_id": "sencalada@gmail.com",
+    "fecha_compra": "2024-06-01T16:30:00Z",
+    "items": [
+      {
+        "item_id": "001",
+        "product_name": "Papaya",
+        "quantity": 1,
+        "price": "15.19"
+      },
+      {
+        "item_id": "002",
+        "product_name": "Naranja",
+        "quantity": 3,
+        "price": "12.50"
+      }
+    ],
+    "direccion_entrega": {
+      "calle": "Junin 352",
+      "distrito": "Miraflores",
+      "provincia": "Lima",  	
+      "pais": "Perú"
+    }
+  }
+}
