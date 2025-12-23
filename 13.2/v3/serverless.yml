@@ -1,0 +1,67 @@
+service: nuevo-archivo-utec
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  iam:
+    role: arn:aws:iam::${aws:accountId}:role/LabRole
+
+custom:
+  bucketName: mi-bucket-${self:provider.stage}-${aws:accountId}
+  notificationEmail: dfigueroaw@gmail.com
+
+functions:
+  LeerMetadataArchivo:
+    handler: LeerMetadataArchivo.lambda_handler
+
+resources:
+  Resources:
+    AllowS3InvokeLambda:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName: !Ref LeerMetadataArchivoLambdaFunction
+        Action: lambda:InvokeFunction
+        Principal: s3.amazonaws.com
+        SourceArn: !Sub arn:aws:s3:::${self:custom.bucketName}
+
+    MyBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Retain
+      DependsOn: AllowS3InvokeLambda
+      Properties:
+        BucketName: ${self:custom.bucketName}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          IgnorePublicAcls: false
+          BlockPublicPolicy: false
+          RestrictPublicBuckets: false
+
+        NotificationConfiguration:
+          LambdaConfigurations:
+            - Event: s3:ObjectCreated:*
+              Function: !GetAtt LeerMetadataArchivoLambdaFunction.Arn
+
+    TemaNuevoArchivo:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: TemaNuevoArchivo
+
+    SuscripcionEmailUTEC:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn: !Ref TemaNuevoArchivo
+        Protocol: email
+        Endpoint: ${self:custom.notificationEmail}
+        FilterPolicy:
+          tenant_id:
+            - UTEC
+
+  Outputs:
+    BucketName:
+      Value: !Ref MyBucket
+    BucketArn:
+      Value: !GetAtt MyBucket.Arn
+    TemaNuevoArchivoArn:
+      Value: !Ref TemaNuevoArchivo
