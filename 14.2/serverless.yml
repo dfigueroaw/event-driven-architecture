@@ -4,9 +4,10 @@ provider:
   name: aws
   runtime: python3.13
   region: us-east-1
-  stage: ${opt:stage, 'dev'}
   iam:
     role: arn:aws:iam::${aws:accountId}:role/LabRole
+  environment:
+    SNS_TOPIC_ARN: !Ref TemaSensorIoT
 
 custom:
   notificationEmail: dfigueroaw@gmail.com
@@ -20,7 +21,6 @@ functions:
     events:
       - sqs:
           arn: !GetAtt ColaSensorIoTFAB1.Arn
-          batchSize: 1
 
 resources:
   Resources:
@@ -48,9 +48,7 @@ resources:
     ReglaSimuladorSensorIoT:
       Type: AWS::Events::Rule
       Properties:
-        Name: SimuladorSensorIoT
         ScheduleExpression: rate(1 minute)
-        State: ENABLED
         Targets:
           - Arn: !GetAtt GenerarEventoSensorIoTLambdaFunction.Arn
             Id: GenerarEventoSensorIoTTarget
@@ -109,13 +107,3 @@ resources:
         FilterPolicy:
           tenant_id:
             - FAB1
-
-  Outputs:
-    TemaSensorIoTArn:
-      Value: !Ref TemaSensorIoT
-
-    ColaSensorIoTFAB1Url:
-      Value: !Ref ColaSensorIoTFAB1
-
-    TablaSensorIoTFAB1:
-      Value: t_sensor_iot_FAB1

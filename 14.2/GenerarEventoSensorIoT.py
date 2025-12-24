@@ -2,6 +2,7 @@ import json
 import random
 from datetime import datetime
 import boto3
+import os
 
 def lambda_handler(event, context):
     # Simulacion de Lectura de Sensor
@@ -24,7 +25,7 @@ def lambda_handler(event, context):
     # Publicar en SNS
     sns_client = boto3.client('sns')
     response_sns = sns_client.publish(
-        TopicArn = 'arn:aws:sns:us-east-1:891377132613:TemaSensorIoT',
+        TopicArn = os.environ["SNS_TOPIC_ARN"],
         Subject = 'Nueva Lectura Sensor',
         Message = json.dumps(lectura_sensor),
         MessageAttributes = {
