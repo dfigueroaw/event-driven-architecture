@@ -4,23 +4,34 @@ provider:
   name: aws
   runtime: python3.13
   region: us-east-1
-  stage: ${opt:stage, 'dev'}
   iam:
     role: arn:aws:iam::${aws:accountId}:role/LabRole
 
 custom:
-  bucketName: mi-bucket-${self:provider.stage}-${aws:accountId}
+  bucketName: bucket-utec-${aws:accountId}
   notificationEmail: dfigueroaw@gmail.com
 
 functions:
   LeerMetadataArchivo:
     handler: LeerMetadataArchivo.lambda_handler
+    environment:
+      TEMA_NUEVO_ARCHIVO_ARN: !Ref TemaNuevoArchivo
 
   CrearArchivoUTEC:
     handler: CrearArchivo_UTEC.lambda_handler
 
 resources:
   Resources:
+    MyBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Retain
+      Properties:
+        BucketName: ${self:custom.bucketName}
+        NotificationConfiguration:
+          LambdaConfigurations:
+            - Event: s3:ObjectCreated:*
+              Function: !GetAtt LeerMetadataArchivoLambdaFunction.Arn
+
     AllowS3InvokeLambda:
       Type: AWS::Lambda::Permission
       Properties:
@@ -28,23 +39,6 @@ resources:
         Action: lambda:InvokeFunction
         Principal: s3.amazonaws.com
         SourceArn: !Sub arn:aws:s3:::${self:custom.bucketName}
-
-    MyBucket:
-      Type: AWS::S3::Bucket
-      DeletionPolicy: Retain
-      DependsOn: AllowS3InvokeLambda
-      Properties:
-        BucketName: ${self:custom.bucketName}
-        PublicAccessBlockConfiguration:
-          BlockPublicAcls: false
-          IgnorePublicAcls: false
-          BlockPublicPolicy: false
-          RestrictPublicBuckets: false
-
-        NotificationConfiguration:
-          LambdaConfigurations:
-            - Event: s3:ObjectCreated:*
-              Function: !GetAtt LeerMetadataArchivoLambdaFunction.Arn
 
     TemaNuevoArchivo:
       Type: AWS::SNS::Topic
@@ -67,13 +61,11 @@ resources:
       Properties:
         TableName: t_archivos_UTEC
         BillingMode: PAY_PER_REQUEST
-
         AttributeDefinitions:
           - AttributeName: tenant_id
             AttributeType: S
           - AttributeName: archivo_id
             AttributeType: S
-
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
@@ -97,13 +89,3 @@ resources:
         FilterPolicy:
           tenant_id:
             - UTEC
-
-  Outputs:
-    BucketName:
-      Value: !Ref MyBucket
-    BucketArn:
-      Value: !GetAtt MyBucket.Arn
-    TemaNuevoArchivoArn:
-      Value: !Ref TemaNuevoArchivo
-    TablaDynamoUTEC:
-      Value: t_archivos_UTEC

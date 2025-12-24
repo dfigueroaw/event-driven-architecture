@@ -1,5 +1,6 @@
 import json
 import boto3
+import os
 
 def lambda_handler(event, context):
     # Entrada (json)
@@ -19,8 +20,9 @@ def lambda_handler(event, context):
     }
     # Publicar en SNS
     sns_client = boto3.client('sns')
+    topic_arn = os.environ['TEMA_NUEVO_ARCHIVO_ARN']
     response_sns = sns_client.publish(
-        TopicArn = 'arn:aws:sns:us-east-1:891377132613:TemaNuevoArchivo',
+        TopicArn = topic_arn,
         Subject = 'Nuevo Archivo',
         Message = json.dumps(archivo),
         MessageAttributes = {
