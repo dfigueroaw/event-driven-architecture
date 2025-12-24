@@ -5,9 +5,10 @@ provider:
   runtime: python3.13
   timeout: 30
   region: us-east-1
-  stage: ${opt:stage, 'dev'}
   iam:
     role: arn:aws:iam::${aws:accountId}:role/LabRole
+  environment:
+    SQS_QUEUE_URL: !Ref ColaPedidos
 
 functions:
   RegistrarPedido:
@@ -17,7 +18,6 @@ functions:
           path: pedidos/registrar
           method: post
           cors: true
-          integration: lambda
 
   ProcesarPedido:
     handler: ProcesarPedido.lambda_handler
@@ -26,7 +26,6 @@ functions:
           path: pedidos/procesar
           method: get
           cors: true
-          integration: lambda
 
 resources:
   Resources:
@@ -50,9 +49,3 @@ resources:
             KeyType: HASH
           - AttributeName: pedido_id
             KeyType: RANGE
-
-  Outputs:
-    QueueUrl:
-      Value: !Ref ColaPedidos
-    TablaDynamo:
-      Value: t_pedidos_procesados
